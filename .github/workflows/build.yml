@@ -1,0 +1,28 @@
+name: Build macOS App
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build App
+      run: |
+        swiftc *.swift -o DynamicIsland -framework AppKit -framework SwiftUI -framework CoreWLAN -framework IOBluetooth -framework IOKit -framework ScreenCaptureKit -framework WeatherKit -framework AVFoundation
+
+    - name: Create DMG
+      run: |
+        mkdir -p dmg_temp/DynamicIsland.app/Contents/MacOS
+        mkdir -p dmg_temp/DynamicIsland.app/Contents/Resources
+        cp DynamicIsland dmg_temp/DynamicIsland.app/Contents/MacOS/
+        cp Info.plist dmg_temp/DynamicIsland.app/Contents/
+        cp DynamicIsland.entitlements dmg_temp/DynamicIsland.app/Contents/Resources/ || true
+        hdiutil create -volname "Dynamic Island" -srcfolder dmg_temp -ov -format UDZO DynamicIsland.dmg
+
+    - name: Upload DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: DynamicIsland-DMG
+        path: DynamicIsland.dmg
